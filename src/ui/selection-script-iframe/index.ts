@@ -7,7 +7,7 @@ import "./index.css"
 
 const app = createApp(App).use(i18n).use(ui).use(pinia)
 
-app.mount("#app")
+//app.mount("#app")
 
 export default app
 
