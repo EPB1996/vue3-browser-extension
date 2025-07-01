@@ -1,6 +1,6 @@
-// Sample code if using extensionpay.com
-// import { extPay } from 'src/utils/payment/extPay'
-// extPay.startBackground()
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error))
 
 chrome.runtime.onInstalled.addListener(async (opt) => {
   // Check if reason is install or update. Eg: opt.reason === 'install' // If extension is installed.

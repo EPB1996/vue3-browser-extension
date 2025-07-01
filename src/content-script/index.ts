@@ -9,9 +9,9 @@ const iframe = new DOMParser().parseFromString(
   "text/html",
 ).body.firstElementChild
 
-if (iframe) {
+/* if (iframe) {
   document.body?.append(iframe)
-}
+} */
 
 self.onerror = function (message, source, lineno, colno, error) {
   console.info("Error: " + message)
