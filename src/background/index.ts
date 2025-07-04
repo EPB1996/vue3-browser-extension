@@ -110,44 +110,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.info("Background received from content script:", message)
 
   if (message.type === "PAGE_DATA") {
+    console.info("Forwarding PAGE_DATA to sidepanel:", message.data)
     // Forward page data to sidepanel
-    /*   if (sidePanelPort) {
+    if (sidePanelPort) {
       sidePanelPort.postMessage({
         type: "PAGE_DATA",
         data: message.data,
-        tabId: sender.tab.id,
-      }) 
+        tabId: sender.tab!.id,
+      })
     }
-*/
+
     // Send response back to content script
     sendResponse({ success: true, message: "Data received" })
   }
 
-  if (message.type === "GET_PAGE_INFO") {
-    console.info("Content script requested page data", message)
+  if (message.type === "OPEN_SIDE_PANEL") {
+    // Open the side panel in the current tab
+    chrome.sidePanel
+      .open({ tabId: sender.tab?.id })
+      .then(() => {
+        console.info("Side panel opened for tab:", sender.tab?.id)
+      })
+      .catch((error) => {
+        console.error("Error opening side panel:", error)
+      })
+  }
+
+  if (message.type === "PAGE_LOADED") {
     sendResponse({
       success: true,
       data: {
-        timestamp: Date.now(),
-        tabId: sender.tab!.id,
-        url: sender.tab!.url,
+        "Page load received successfully": message.data,
       },
     })
   }
 
   // Return true to indicate we'll send a response asynchronously
   return true
-})
-
-// Example of background script initiating communication
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && sidePanelPort) {
-    sidePanelPort.postMessage({
-      type: "TAB_UPDATED",
-      tabId: tabId,
-      url: tab.url,
-    })
-  }
 })
 
 export {}
