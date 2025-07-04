@@ -32,8 +32,16 @@ export default {
   content_scripts: [
     {
       all_frames: false,
-      js: ["src/content-script/index.ts", "src/selection-script/index.ts"],
-      matches: ["*://*/*"],
+      js: [
+        "src/content-script/index.ts" /* , "src/selection-script/index.ts" */,
+      ],
+      matches: ["https://drive.google.com/*"],
+      run_at: "document_end",
+    },
+    {
+      all_frames: true,
+      js: ["src/test-script/index.ts"],
+      matches: ["https://drive.google.com/*"],
       run_at: "document_end",
     },
   ],

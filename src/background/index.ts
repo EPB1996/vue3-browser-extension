@@ -1,7 +1,3 @@
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error(error))
-
 chrome.runtime.onInstalled.addListener(async (opt) => {
   // Check if reason is install or update. Eg: opt.reason === 'install' // If extension is installed.
   // opt.reason === 'update' // If extension is updated.
@@ -35,5 +31,123 @@ self.onerror = function (message, source, lineno, colno, error) {
 }
 
 console.info("hello world from background")
+
+let sidePanelPort: chrome.runtime.Port | null = null
+
+// Handle extension icon click to open side panel
+chrome.action.onClicked.addListener(async (tab) => {
+  await chrome.sidePanel.open({ tabId: tab.id })
+})
+
+// Handle connections from sidepanel
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "sidepanel") {
+    sidePanelPort = port
+    console.info("Sidepanel connected")
+
+    // Listen for messages from sidepanel
+    port.onMessage.addListener((message) => {
+      console.info("Background received from sidepanel:", message)
+      handleSidepanelMessage(message)
+    })
+
+    // Handle sidepanel disconnect
+    port.onDisconnect.addListener(() => {
+      console.info("Sidepanel disconnected")
+      sidePanelPort = null
+    })
+  }
+})
+
+// Handle messages from sidepanel
+async function handleSidepanelMessage(message: { type: string; action: any }) {
+  if (message.type === "REQUEST_PAGE_DATA") {
+    // Get active tab and request data from content script
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (tabs[0]) {
+      try {
+        const response = await chrome.tabs.sendMessage(tabs[0].id!, {
+          type: "GET_PAGE_DATA",
+        })
+
+        // Send response back to sidepanel
+        if (sidePanelPort) {
+          sidePanelPort.postMessage({
+            type: "PAGE_DATA_RESPONSE",
+            data: response,
+          })
+        }
+      } catch (error) {
+        console.error("Error communicating with content script:", error)
+        if (sidePanelPort) {
+          sidePanelPort.postMessage({
+            type: "ERROR",
+            message: "Could not communicate with page",
+          })
+        }
+      }
+    }
+  }
+
+  if (message.type === "INJECT_SCRIPT") {
+    // Example of sidepanel requesting background to inject script
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (tabs[0]) {
+      try {
+        await chrome.tabs.sendMessage(tabs[0].id!, {
+          type: "EXECUTE_ACTION",
+          action: message.action,
+        })
+      } catch (error) {
+        console.error("Error injecting script:", error)
+      }
+    }
+  }
+}
+
+// Handle messages from content script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.info("Background received from content script:", message)
+
+  if (message.type === "PAGE_DATA") {
+    // Forward page data to sidepanel
+    /*   if (sidePanelPort) {
+      sidePanelPort.postMessage({
+        type: "PAGE_DATA",
+        data: message.data,
+        tabId: sender.tab.id,
+      }) 
+    }
+*/
+    // Send response back to content script
+    sendResponse({ success: true, message: "Data received" })
+  }
+
+  if (message.type === "GET_PAGE_INFO") {
+    console.info("Content script requested page data", message)
+    sendResponse({
+      success: true,
+      data: {
+        timestamp: Date.now(),
+        tabId: sender.tab!.id,
+        url: sender.tab!.url,
+      },
+    })
+  }
+
+  // Return true to indicate we'll send a response asynchronously
+  return true
+})
+
+// Example of background script initiating communication
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && sidePanelPort) {
+    sidePanelPort.postMessage({
+      type: "TAB_UPDATED",
+      tabId: tabId,
+      url: tab.url,
+    })
+  }
+})
 
 export {}

@@ -298,6 +298,7 @@
     "useScriptTag": true,
     "useScroll": true,
     "useScrollLock": true,
+    "useSelectionStore": true,
     "useSessionStorage": true,
     "useShare": true,
     "useSlots": true,

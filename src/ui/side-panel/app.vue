@@ -8,7 +8,7 @@
       <RouterView />
     </div>
 
-    <AppFooter />
+    <!-- <AppFooter /> -->
   </UApp>
 </template>
 

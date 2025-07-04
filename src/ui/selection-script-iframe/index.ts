@@ -18,3 +18,5 @@ self.onerror = function (message, source, lineno, colno, error) {
   console.info("Column: " + colno)
   console.info("Error object: " + error)
 }
+
+console.info("hello world from selection-script")
