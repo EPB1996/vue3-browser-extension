@@ -61,7 +61,7 @@ function handleBackgroundMessage(message: Message) {
     data: {
       message: "Message received by side panel",
       originalType: message.type,
-      originalData: message.data,
+      originalData: message.data ?? {},
     },
   }
   switch (message.type) {

@@ -2,6 +2,8 @@ import { env } from "node:process"
 import type { ManifestV3Export } from "@crxjs/vite-plugin"
 import packageJson from "./package.json" with { type: "json" }
 
+const clientId = env.VITE_OAUTH2_CLIENT_ID
+
 const { version, name, description, displayName } = packageJson
 // Convert from Semver (example: 0.1.0-beta6)
 const [major, minor, patch, label = "0"] = version
@@ -48,11 +50,27 @@ export default {
   side_panel: {
     default_path: "src/ui/side-panel/index.html",
   },
+  oauth2: {
+    client_id:
+      "706947582728-t1uclf1f4riovsrff9ajk9fetlnufja2.apps.googleusercontent.com",
+    scopes: [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/gmail.addons.current.message.action",
+      "https://www.googleapis.com/auth/gmail.readonly",
+    ],
+  },
   devtools_page: "src/devtools/index.html",
   options_page: "src/ui/options-page/index.html",
   offline_enabled: true,
   host_permissions: ["<all_urls>"],
-  permissions: ["storage", "tabs", "background", "sidePanel"],
+  permissions: [
+    "storage",
+    "tabs",
+    "background",
+    "sidePanel",
+    "identity",
+    "identity.email",
+  ],
   web_accessible_resources: [
     {
       resources: [
