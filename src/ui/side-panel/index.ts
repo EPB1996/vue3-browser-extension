@@ -5,6 +5,7 @@ import { createApp } from "vue"
 import App from "./app.vue"
 import ui from "@nuxt/ui/vue-plugin"
 import "./index.css"
+import { BaseMessage, Message } from "@/message/message"
 
 appRouter.addRoute({
   path: "/",
@@ -16,6 +17,7 @@ const app = createApp(App).use(i18n).use(ui).use(pinia).use(appRouter)
 app.mount("#app")
 
 const selectionStore = useSelectionStore()
+const sidePanelStore = useSidepanelStore()
 
 export default app
 
@@ -52,28 +54,56 @@ function initializeConnection() {
   console.info("BACKGROUND <--> SIDE PANEL: Connection established")
 }
 
-function handleBackgroundMessage(message: { type: any; data: any }) {
+function handleBackgroundMessage(message: Message) {
+  const response: Message = {
+    type: "RESPONSE",
+    timestamp: Date.now(),
+    data: {
+      message: "Message received by side panel",
+      originalType: message.type,
+      originalData: message.data,
+    },
+  }
   switch (message.type) {
     case "PAGE_DATA":
       selectionStore.setSelection(message.data.message)
       break
     case "TAB_UPDATED":
-      console.info("Tab updated:", message.data)
+      console.info("Tab updated:", message.data.tabId, message.data.url)
       break
+    case "TAB_ACTIVATED":
+      console.info("Tab activated:", message.data.tabId, message.data.url)
+      // if mail app route to gmail page
+      if (message.data.url.startsWith("https://mail.google.com")) {
+        appRouter.push({
+          path: "/side-panel/gmail",
+        })
+      }
+      // if docs app route to docs page
+      else if (message.data.url.startsWith("https://docs.google.com")) {
+        appRouter.push({
+          path: "/side-panel/docs",
+        })
+      }
+      // default to index
+      else {
+        appRouter.push({
+          path: "/side-panel",
+        })
+      }
 
+      break
     case "ERROR":
       console.error("Error from background:", message.data)
       break
-
-    default:
-      console.info("Unknown message type:", message.type)
   }
+  // Send a response back to the background script
+  sendToBackground(response)
 }
 
-function sendToBackground(message: any) {
+function sendToBackground(message: Message) {
   if (backgroundPort) {
     backgroundPort.postMessage(message)
-    console.info("Sent to background:", message)
   } else {
     console.error("No connection to background script")
   }

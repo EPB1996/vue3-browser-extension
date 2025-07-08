@@ -301,6 +301,7 @@
     "useSelectionStore": true,
     "useSessionStorage": true,
     "useShare": true,
+    "useSidepanelStore": true,
     "useSlots": true,
     "useSorted": true,
     "useSpeechRecognition": true,

@@ -33,5 +33,7 @@ declare module 'vue-router/auto-routes' {
     '/setup/install': RouteRecordInfo<'/setup/install', '/setup/install', Record<never, never>, Record<never, never>>,
     '/setup/update': RouteRecordInfo<'/setup/update', '/setup/update', Record<never, never>, Record<never, never>>,
     '/side-panel/': RouteRecordInfo<'/side-panel/', '/side-panel', Record<never, never>, Record<never, never>>,
+    '/side-panel/docs': RouteRecordInfo<'/side-panel/docs', '/side-panel/docs', Record<never, never>, Record<never, never>>,
+    '/side-panel/gmail': RouteRecordInfo<'/side-panel/gmail', '/side-panel/gmail', Record<never, never>, Record<never, never>>,
   }
 }

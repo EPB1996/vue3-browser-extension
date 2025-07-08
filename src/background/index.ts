@@ -1,3 +1,9 @@
+import {
+  Message,
+  TabActivateddMessage,
+  TabUpdatedMessage,
+} from "src/message/message"
+
 chrome.runtime.onInstalled.addListener(async (opt) => {
   // Check if reason is install or update. Eg: opt.reason === 'install' // If extension is installed.
   // opt.reason === 'update' // If extension is updated.
@@ -59,49 +65,73 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 })
 
-// Handle messages from sidepanel
-async function handleSidepanelMessage(message: { type: string; action: any }) {
-  if (message.type === "REQUEST_PAGE_DATA") {
-    // Get active tab and request data from content script
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (tabs[0]) {
-      try {
-        const response = await chrome.tabs.sendMessage(tabs[0].id!, {
-          type: "GET_PAGE_DATA",
-        })
+/* // Listen for tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Example: Notify sidepanel when a tab's URL changes
 
-        // Send response back to sidepanel
-        if (sidePanelPort) {
-          sidePanelPort.postMessage({
-            type: "PAGE_DATA_RESPONSE",
-            data: response,
-          })
-        }
-      } catch (error) {
-        console.error("Error communicating with content script:", error)
-        if (sidePanelPort) {
-          sidePanelPort.postMessage({
-            type: "ERROR",
-            message: "Could not communicate with page",
-          })
-        }
-      }
-    }
+  const message: TabUpdatedMessage = {
+    type: "TAB_UPDATED",
+    timestamp: Date.now(),
+    data: {
+      tabId,
+      url: changeInfo.url || tab.url || "",
+    },
   }
 
-  if (message.type === "INJECT_SCRIPT") {
-    // Example of sidepanel requesting background to inject script
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (tabs[0]) {
-      try {
-        await chrome.tabs.sendMessage(tabs[0].id!, {
-          type: "EXECUTE_ACTION",
-          action: message.action,
-        })
-      } catch (error) {
-        console.error("Error injecting script:", error)
+  if (sidePanelPort) {
+    sidePanelPort.postMessage(message)
+  }
+}) */
+
+// Listen for tab activation
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  const tab = await chrome.tabs.get(activeInfo.tabId)
+  const message: TabActivateddMessage = {
+    type: "TAB_ACTIVATED",
+    timestamp: Date.now(),
+    data: {
+      tabId: activeInfo.tabId,
+      url: tab.url || "",
+    },
+  }
+  if (sidePanelPort) {
+    sidePanelPort.postMessage(message)
+  }
+})
+
+// Handle messages from sidepanel
+async function handleSidepanelMessage(message: Message) {
+  // Handle other message types as needed
+  switch (message.type) {
+    case "SIDEPANEL_READY": {
+      const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      })
+      if (tabs.length > 0) {
+        const activeTab = tabs[0]
+        const message: Message = {
+          type: "TAB_ACTIVATED",
+          timestamp: Date.now(),
+          data: {
+            tabId: activeTab.id!,
+            url: activeTab.url || "",
+          },
+        }
+        if (sidePanelPort) {
+          sidePanelPort.postMessage(message)
+        }
       }
+      break
     }
+    case "RESPONSE": {
+      // Handle response messages from sidepanel
+      console.info("Response from sidepanel:", message.data)
+      break
+    }
+    default:
+      console.warn("Unknown message type from sidepanel:", message.type)
+      break
   }
 }
 
