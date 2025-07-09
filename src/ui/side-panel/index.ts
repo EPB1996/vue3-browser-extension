@@ -5,7 +5,12 @@ import { createApp } from "vue"
 import App from "./app.vue"
 import ui from "@nuxt/ui/vue-plugin"
 import "./index.css"
-import { BaseMessage, Message } from "@/message/message"
+import {
+  BaseMessage,
+  ContentScriptFunctionMessage,
+  Message,
+} from "@/message/message"
+import messageService from "@/service/message.service"
 
 appRouter.addRoute({
   path: "/",
@@ -65,11 +70,26 @@ function handleBackgroundMessage(message: Message) {
     },
   }
   switch (message.type) {
-    case "PAGE_DATA":
-      selectionStore.setSelection(message.data.message)
-      break
     case "TAB_UPDATED":
+      // Gmail
       console.info("Tab updated:", message.data.tabId, message.data.url)
+      if (message.data.url.includes("#inbox")) {
+        // ask content script to get threadID via background
+        const contentScriptMessage: ContentScriptFunctionMessage = {
+          type: "CONTENT_SCRIPT_FUNCTION",
+          timestamp: Date.now(),
+          data: {
+            tabId: message.data.tabId,
+            functionName: "getThreadId",
+            args: [],
+          },
+        }
+        messageService.sendMessageToContentScript(
+          message.data.tabId,
+          contentScriptMessage,
+        )
+      }
+
       break
     case "TAB_ACTIVATED":
       console.info("Tab activated:", message.data.tabId, message.data.url)

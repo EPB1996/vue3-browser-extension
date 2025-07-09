@@ -65,7 +65,7 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 })
 
-/* // Listen for tab updates
+// Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Example: Notify sidepanel when a tab's URL changes
 
@@ -81,7 +81,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (sidePanelPort) {
     sidePanelPort.postMessage(message)
   }
-}) */
+})
 
 // Listen for tab activation
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
@@ -129,6 +129,19 @@ async function handleSidepanelMessage(message: Message) {
       console.info("Response from sidepanel:", message.data)
       break
     }
+
+    case "CONTENT_SCRIPT_FUNCTION": {
+      // Handle request for Gmail thread ID
+      console.info("Requesting Gmail thread ID for tab:", message.data.tabId)
+      chrome.tabs.sendMessage(message.data.tabId, {
+        type: "CONTENT_SCRIPT_FUNCTION",
+        functionName: message.data.functionName,
+        args: message.data.args,
+      })
+
+      break
+    }
+
     default:
       console.warn("Unknown message type from sidepanel:", message.type)
       break
@@ -138,21 +151,6 @@ async function handleSidepanelMessage(message: Message) {
 // Handle messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.info("Background received from content script:", message)
-
-  if (message.type === "PAGE_DATA") {
-    console.info("Forwarding PAGE_DATA to sidepanel:", message.data)
-    // Forward page data to sidepanel
-    if (sidePanelPort) {
-      sidePanelPort.postMessage({
-        type: "PAGE_DATA",
-        data: message.data,
-        tabId: sender.tab!.id,
-      })
-    }
-
-    // Send response back to content script
-    sendResponse({ success: true, message: "Data received" })
-  }
 
   if (message.type === "OPEN_SIDE_PANEL") {
     // Open the side panel in the current tab
@@ -167,12 +165,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "PAGE_LOADED") {
-    sendResponse({
-      success: true,
-      data: {
-        "Page load received successfully": message.data,
-      },
-    })
+    console.info("Page load received:", message.data)
   }
 
   // Return true to indicate we'll send a response asynchronously

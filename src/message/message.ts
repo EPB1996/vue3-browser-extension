@@ -3,6 +3,7 @@ export interface BaseMessage {
   timestamp: number
 }
 
+// General
 export interface SidePanelReadyMessage extends BaseMessage {
   type: "SIDEPANEL_READY"
 }
@@ -44,6 +45,14 @@ export interface ErrorMessage extends BaseMessage {
     error: string
   }
 }
+export interface ContentScriptFunctionMessage extends BaseMessage {
+  type: "CONTENT_SCRIPT_FUNCTION"
+  data: {
+    tabId: number
+    functionName: string
+    args: any[]
+  }
+}
 
 export type Message =
   | SidePanelReadyMessage
@@ -52,3 +61,4 @@ export type Message =
   | TabActivateddMessage
   | ResponseMessage
   | ErrorMessage
+  | ContentScriptFunctionMessage

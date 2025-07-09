@@ -41,9 +41,9 @@ export default {
       run_at: "document_end",
     },
     {
-      all_frames: true,
+      all_frames: false,
       js: ["src/test-script/index.ts"],
-      matches: ["https://drive.google.com/*"],
+      matches: ["https://mail.google.com/*"],
       run_at: "document_end",
     },
   ],
