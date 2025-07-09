@@ -1,3 +1,5 @@
+import { MessageType } from "@/model/message"
+
 console.info("Test script loaded")
 
 // Example of content script initiating communication
@@ -13,7 +15,7 @@ window.addEventListener("load", async () => {
 })
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "CONTENT_SCRIPT_FUNCTION") {
+  if (message.type === MessageType.CONTENT_SCRIPT_FUNCTION) {
     // Handle function calls from the background script
     const { functionName, args } = message.data
 

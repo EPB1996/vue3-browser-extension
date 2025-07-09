@@ -1,4 +1,4 @@
-import { Message } from "@/message/message"
+import { Message } from "@/model/message"
 
 class MessageService {
   sendMessageToContentScript(tabId: number, message: Message): Promise<any> {
@@ -10,4 +10,4 @@ class MessageService {
   }
 }
 
-export default new MessageService()
+export default MessageService

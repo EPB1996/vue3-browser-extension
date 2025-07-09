@@ -5,12 +5,9 @@ import { createApp } from "vue"
 import App from "./app.vue"
 import ui from "@nuxt/ui/vue-plugin"
 import "./index.css"
-import {
-  BaseMessage,
-  ContentScriptFunctionMessage,
-  Message,
-} from "@/message/message"
-import messageService from "@/service/message.service"
+import { Message, MessageType } from "@/model/message"
+
+import MessageService from "@/service/message.service"
 
 appRouter.addRoute({
   path: "/",
@@ -23,6 +20,7 @@ app.mount("#app")
 
 const selectionStore = useSelectionStore()
 const sidePanelStore = useSidepanelStore()
+const messageService = new MessageService()
 
 export default app
 
@@ -61,7 +59,7 @@ function initializeConnection() {
 
 function handleBackgroundMessage(message: Message) {
   const response: Message = {
-    type: "RESPONSE",
+    type: MessageType.RESPONSE,
     timestamp: Date.now(),
     data: {
       message: "Message received by side panel",
@@ -70,13 +68,13 @@ function handleBackgroundMessage(message: Message) {
     },
   }
   switch (message.type) {
-    case "TAB_UPDATED":
+    case MessageType.TAB_UPDATED:
       // Gmail
       console.info("Tab updated:", message.data.tabId, message.data.url)
       if (message.data.url.includes("#inbox")) {
         // ask content script to get threadID via background
-        const contentScriptMessage: ContentScriptFunctionMessage = {
-          type: "CONTENT_SCRIPT_FUNCTION",
+        const contentScriptMessage: Message = {
+          type: MessageType.CONTENT_SCRIPT_FUNCTION,
           timestamp: Date.now(),
           data: {
             tabId: message.data.tabId,
@@ -91,7 +89,7 @@ function handleBackgroundMessage(message: Message) {
       }
 
       break
-    case "TAB_ACTIVATED":
+    case MessageType.TAB_ACTIVATED:
       console.info("Tab activated:", message.data.tabId, message.data.url)
       // if mail app route to gmail page
       if (message.data.url.startsWith("https://mail.google.com")) {
@@ -113,7 +111,7 @@ function handleBackgroundMessage(message: Message) {
       }
 
       break
-    case "ERROR":
+    case MessageType.ERROR:
       console.error("Error from background:", message.data)
       break
   }
@@ -136,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Send initial message
   setTimeout(() => {
     sendToBackground({
-      type: "SIDEPANEL_READY",
+      type: MessageType.SIDEPANEL_READY,
       timestamp: Date.now(),
     })
   }, 500)

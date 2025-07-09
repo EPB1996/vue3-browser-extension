@@ -1,29 +1,40 @@
+export enum MessageType {
+  SIDEPANEL_READY = "SIDEPANEL_READY",
+  PAGE_DATA = "PAGE_DATA",
+  TAB_UPDATED = "TAB_UPDATED",
+  TAB_ACTIVATED = "TAB_ACTIVATED",
+  RESPONSE = "RESPONSE",
+  ERROR = "ERROR",
+  CONTENT_SCRIPT_FUNCTION = "CONTENT_SCRIPT_FUNCTION",
+}
+
 export interface BaseMessage {
-  type: string
+  type: MessageType
   timestamp: number
 }
 
 // General
 export interface SidePanelReadyMessage extends BaseMessage {
-  type: "SIDEPANEL_READY"
+  type: MessageType.SIDEPANEL_READY
 }
 
 export interface PageDataMessage extends BaseMessage {
-  type: "PAGE_DATA"
+  type: MessageType.PAGE_DATA
   data: {
     message: string
   }
 }
 
 export interface TabUpdatedMessage extends BaseMessage {
-  type: "TAB_UPDATED"
+  type: MessageType.TAB_UPDATED
   data: {
     tabId: number
     url: string
   }
 }
-export interface TabActivateddMessage extends BaseMessage {
-  type: "TAB_ACTIVATED"
+
+export interface TabActivatedMessage extends BaseMessage {
+  type: MessageType.TAB_ACTIVATED
   data: {
     tabId: number
     url: string
@@ -31,7 +42,7 @@ export interface TabActivateddMessage extends BaseMessage {
 }
 
 export interface ResponseMessage extends BaseMessage {
-  type: "RESPONSE"
+  type: MessageType.RESPONSE
   data: {
     message: string
     originalType: string
@@ -40,13 +51,14 @@ export interface ResponseMessage extends BaseMessage {
 }
 
 export interface ErrorMessage extends BaseMessage {
-  type: "ERROR"
+  type: MessageType.ERROR
   data: {
     error: string
   }
 }
+
 export interface ContentScriptFunctionMessage extends BaseMessage {
-  type: "CONTENT_SCRIPT_FUNCTION"
+  type: MessageType.CONTENT_SCRIPT_FUNCTION
   data: {
     tabId: number
     functionName: string
@@ -58,7 +70,7 @@ export type Message =
   | SidePanelReadyMessage
   | PageDataMessage
   | TabUpdatedMessage
-  | TabActivateddMessage
+  | TabActivatedMessage
   | ResponseMessage
   | ErrorMessage
   | ContentScriptFunctionMessage

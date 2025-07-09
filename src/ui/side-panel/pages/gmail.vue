@@ -65,15 +65,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { ContentScriptFunctionMessage, Message } from "@/message/message"
+import { ContentScriptFunctionMessage, Message } from "@/model/message"
 import IdentityService from "@/service/identity.service"
-import messageService from "@/service/message.service"
+import MessageService from "@/service/message.service"
 
 const userStore = useUserStore()
 
 const { userEmail } = storeToRefs(userStore)
 
 const identityService = new IdentityService()
+const messageService = new MessageService()
 
 const apiError = ref<any>(null)
 const emails = ref<any>(null)
