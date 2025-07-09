@@ -1,4 +1,4 @@
-import { Message } from "@/model/message"
+import { Message, MessageType } from "@/model/message"
 
 class SidePanelHandler {
   private sidePanelPort: chrome.runtime.Port | null = null
@@ -32,7 +32,7 @@ class SidePanelHandler {
   private async handleMessage(message: Message) {
     // Handle other message types as needed
     switch (message.type) {
-      case "SIDEPANEL_READY": {
+      case MessageType.SIDEPANEL_READY: {
         const tabs = await chrome.tabs.query({
           active: true,
           currentWindow: true,
@@ -40,7 +40,7 @@ class SidePanelHandler {
         if (tabs.length > 0) {
           const activeTab = tabs[0]
           const responseMessage: Message = {
-            type: "TAB_ACTIVATED",
+            type: MessageType.TAB_ACTIVATED,
             timestamp: Date.now(),
             data: {
               tabId: activeTab.id!,
@@ -51,17 +51,17 @@ class SidePanelHandler {
         }
         break
       }
-      case "RESPONSE": {
+      case MessageType.RESPONSE: {
         // Handle response messages from sidepanel
         console.info("Response from sidepanel:", message.data)
         break
       }
 
-      case "CONTENT_SCRIPT_FUNCTION": {
+      case MessageType.CONTENT_SCRIPT_FUNCTION: {
         // Handle request for Gmail thread ID
         console.info("Requesting Gmail thread ID for tab:", message.data.tabId)
         chrome.tabs.sendMessage(message.data.tabId, {
-          type: "CONTENT_SCRIPT_FUNCTION",
+          type: MessageType.CONTENT_SCRIPT_FUNCTION,
           functionName: message.data.functionName,
           args: message.data.args,
         })

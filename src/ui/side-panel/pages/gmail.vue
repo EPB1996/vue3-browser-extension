@@ -26,29 +26,34 @@
       <UButton
         icon="ph:envelope-simple"
         variant="solid"
-        @click="fetchEmails"
-      >
-        Fetch Emails
-      </UButton>
-
-      <UButton
-        icon="ph:envelope-simple"
-        variant="solid"
         @click="fetchThread()"
       >
-        Fetch Thread
+        Fetch Thread Manually
       </UButton>
     </div>
+
     <div v-if="thread">
-      <div class="flex flex-row justify-between items-center">
-        <h2 class="text-lg font-semibold mb-2">Thread</h2>
+      <div class="py-2 flex flex-row justify-between items-center">
+        <div class="text-lg font-semibold mb-2">Thread ({{ threadId }})</div>
         <div>{{ Array.from(thread.messages).length }}</div>
       </div>
-      <pre>{{ thread.messages }}</pre>
-    </div>
-    <div v-if="emails">
-      <h2 class="text-lg font-semibold mb-2">Emails</h2>
-      <pre>{{ emails }}</pre>
+      <!-- <pre>{{ thread.messages }}</pre> -->
+      <div class="flex flex-col gap-2">
+        <div
+          v-for="message in Array.from(thread.messages)"
+          :key="message.id"
+          class="px-2 border rounded bg-gray-100 border-gray-300 shadow-sm"
+          style="margin-left: 5px"
+        >
+          <p>
+            {{
+              message.snippet.length > 100
+                ? message.snippet.slice(0, 100) + "..."
+                : message.snippet
+            }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <div v-if="apiError">
@@ -59,46 +64,27 @@
 </template>
 
 <script setup lang="ts">
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { ContentScriptFunctionMessage, Message } from "@/model/message"
+import { Message, MessageType } from "@/model/message"
 import IdentityService from "@/service/identity.service"
 import MessageService from "@/service/message.service"
 
 const userStore = useUserStore()
+const sidePanelStore = useSidepanelStore()
 
 const { userEmail } = storeToRefs(userStore)
+const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
 const messageService = new MessageService()
 
 const apiError = ref<any>(null)
-const emails = ref<any>(null)
 const thread = ref<any>(null)
 
-const fetchEmails = async () => {
-  try {
-    const accessToken = await identityService.getAccessToken()
-
-    const response = await fetch(
-      "https://www.googleapis.com/gmail/v1/users/me/messages",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      },
-    )
-    console.info("Response:", response)
-    emails.value = await response.json()
-  } catch (error) {
-    console.error("Error fetching Gmail messages:", error)
+watch(threadId, async (newThreadId) => {
+  if (newThreadId) {
+    await fetchThread()
   }
-}
+})
 
 const fetchThread = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -107,7 +93,7 @@ const fetchThread = async () => {
   const response = await messageService.sendMessageToContentScript(
     tabId as number,
     {
-      type: "CONTENT_SCRIPT_FUNCTION",
+      type: MessageType.CONTENT_SCRIPT_FUNCTION,
       timestamp: Date.now(),
       data: {
         tabId: tabId,
@@ -118,8 +104,6 @@ const fetchThread = async () => {
   )
 
   const threadId = response.threadId
-
-  apiError.value = `threadID: ${threadId}`
 
   try {
     const accessToken = await identityService.getAccessToken()

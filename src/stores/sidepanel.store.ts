@@ -1,12 +1,12 @@
 export const useSidepanelStore = defineStore("sidepanel", () => {
-  const { data: activeApp } = useBrowserLocalStorage("activeApp", "default")
+  const { data: threadId } = useBrowserLocalStorage("threadID", "")
 
-  const setActiveApp = (app: string) => {
-    activeApp.value = app
+  const setThreadId = (newThreadId: string) => {
+    threadId.value = newThreadId
   }
 
   return {
-    activeApp,
-    setActiveApp,
+    threadId,
+    setThreadId,
   }
 })

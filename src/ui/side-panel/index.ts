@@ -57,7 +57,7 @@ function initializeConnection() {
   console.info("BACKGROUND <--> SIDE PANEL: Connection established")
 }
 
-function handleBackgroundMessage(message: Message) {
+async function handleBackgroundMessage(message: Message) {
   const response: Message = {
     type: MessageType.RESPONSE,
     timestamp: Date.now(),
@@ -82,10 +82,12 @@ function handleBackgroundMessage(message: Message) {
             args: [],
           },
         }
-        messageService.sendMessageToContentScript(
+        const response = await messageService.sendMessageToContentScript(
           message.data.tabId,
           contentScriptMessage,
         )
+
+        sidePanelStore.setThreadId(response.threadId || null)
       }
 
       break
