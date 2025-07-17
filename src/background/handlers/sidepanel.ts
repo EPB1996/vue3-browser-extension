@@ -4,6 +4,11 @@ class SidePanelHandler {
   private sidePanelPort: chrome.runtime.Port | null = null
 
   constructor() {
+    // Handle extension icon click to open side panel
+    chrome.action.onClicked.addListener(async (tab) => {
+      await chrome.sidePanel.open({ tabId: tab.id })
+    })
+
     this.init()
   }
 

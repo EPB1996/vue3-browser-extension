@@ -33,14 +33,14 @@ export default {
     type: "module",
   },
   content_scripts: [
-    {
+    /*   {
       all_frames: false,
       js: [
-        "src/content-script/default/index.ts" /* , "src/selection-script/index.ts" */,
+        "src/content-script/default/index.ts",
       ],
       matches: ["<all_urls>"],
       run_at: "document_end",
-    },
+    }, */
     {
       all_frames: false,
       js: ["src/content-script/gmail/index.ts"],

@@ -26,9 +26,16 @@
       <UButton
         icon="ph:envelope-simple"
         variant="solid"
-        @click="fetchThread()"
+        @click="getThreadIdFromContentScript()"
       >
         Fetch Thread Manually
+      </UButton>
+      <UButton
+        icon="ph:envelope-simple"
+        variant="solid"
+        @click="getUnreadMessages(10)"
+      >
+        Fetch Unread Messages
       </UButton>
     </div>
 
@@ -68,6 +75,7 @@
 
 <script setup lang="ts">
 import { Message, MessageType } from "@/model/message"
+
 import IdentityService from "@/service/identity.service"
 import MessageService from "@/service/message.service"
 
@@ -78,6 +86,8 @@ const { userEmail } = storeToRefs(userStore)
 const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
+/* console.info(await identityService.getAccessToken()) */
+
 const messageService = new MessageService()
 
 const apiError = ref<any>(null)
@@ -85,11 +95,11 @@ const thread = ref<any>(null)
 
 watch(threadId, async (newThreadId) => {
   if (newThreadId) {
-    await fetchThread()
+    await getThreadIdFromContentScript()
   }
 })
 
-const fetchThread = async () => {
+const getThreadIdFromContentScript = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   const tabId = tab.id
 
@@ -157,6 +167,16 @@ const fetchMessage = async (messageId: string) => {
     console.error("Error fetching Gmail message:", error)
     apiError.value = error
   }
+}
+
+const getUnreadMessages = async (maxResults: number = 10) => {
+  const gmailService = new GmailService(await identityService.getAccessToken())
+  const messages = await gmailService.listMessages({
+    q: "is:unread",
+    maxResults: maxResults,
+  })
+
+  console.info("Unread messages:", messages)
 }
 </script>
 
