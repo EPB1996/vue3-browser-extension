@@ -6,6 +6,7 @@ export enum MessageType {
   RESPONSE = "RESPONSE",
   ERROR = "ERROR",
   CONTENT_SCRIPT_FUNCTION = "CONTENT_SCRIPT_FUNCTION",
+  BACKGROUND_FUNCTION = "BACKGROUND_FUNCTION",
 }
 
 export interface BaseMessage {
@@ -66,6 +67,14 @@ export interface ContentScriptFunctionMessage extends BaseMessage {
   }
 }
 
+export interface BackgroundFunctionMessage extends BaseMessage {
+  type: MessageType.BACKGROUND_FUNCTION
+  data: {
+    functionName: string
+    args: any[]
+  }
+}
+
 export type Message =
   | SidePanelReadyMessage
   | PageDataMessage
@@ -74,3 +83,4 @@ export type Message =
   | ResponseMessage
   | ErrorMessage
   | ContentScriptFunctionMessage
+  | BackgroundFunctionMessage

@@ -64,6 +64,7 @@ import { GmailService } from "@/service/gmail.service"
 
 import IdentityService from "@/service/identity.service"
 import ContentScriptCommunicationService from "@/service/communication/content-script.communication.service"
+import { BackgroundCommunicationService } from "@/service/communication/background.communication.service"
 
 const userStore = useUserStore()
 const sidePanelStore = useSidepanelStore()
@@ -73,6 +74,8 @@ const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
 const gmailService = new GmailService()
+const backgroundCommunicationService =
+  BackgroundCommunicationService.getInstance()
 const contentCommunicationService =
   ContentScriptCommunicationService.getInstance()
 
@@ -201,21 +204,40 @@ const createDraft = async () => {
   gmailService.updateAccessToken(await identityService.getAccessToken())
 
   const rawEmail = `To: recipient@example.com
-          Subject: Test Subject
-          Content-Type: text/plain; charset=UTF-8
+Subject: Test Subject
+Content-Type: text/plain; charset=UTF-8
 
-          Hello, this is a test email body.`
+Hello, this is a test email body.`
 
-  gmailService
+  backgroundCommunicationService.sendToBackground({
+    type: MessageType.BACKGROUND_FUNCTION,
+    timestamp: Date.now(),
+    data: {
+      functionName: "openUrl",
+      args: ["https://mail.google.com/mail/u/0/#drafts/19818e6477e33fa6"],
+    },
+  })
+
+  // does not to be called for now
+  /*  gmailService
     .createDraftFromRaw(rawEmail)
     .then(async ({ response, urls }) => {
       console.info("Draft created successfully:", response)
       gmailServiceResponse.value = urls
+
+      backgroundCommunicationService.sendToBackground({
+        type: MessageType.BACKGROUND_FUNCTION,
+        timestamp: Date.now(),
+        data: {
+          functionName: "openUrl",
+          args: ["https://mail.google.com/mail/u/0/#drafts/19818e6477e33fa6",],
+        },
+      })
     })
     .catch((error) => {
       console.error("Error creating draft:", error)
       apiError.value = error
-    })
+    }) */
 }
 
 const fetchDraft = async (draftId: string) => {

@@ -56,6 +56,21 @@ class SidePanelHandler {
         break
       }
 
+      case MessageType.BACKGROUND_FUNCTION: {
+        // Handle background function calls from sidepanel
+        console.info("Background function call from sidepanel:", message.data)
+        const { functionName, args } = message.data
+
+        // Call the appropriate function based on the name
+        if (functionName === "openUrl") {
+          const url = args[0] as string
+          chrome.tabs.update({ url })
+        } else {
+          console.warn("Unknown background function:", functionName)
+        }
+        break
+      }
+
       case MessageType.CONTENT_SCRIPT_FUNCTION: {
         // Handle request for Gmail thread ID
         console.info("Requesting Gmail thread ID for tab:", message.data.tabId)
