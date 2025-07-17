@@ -25,11 +25,10 @@ chrome.runtime.onInstalled.addListener(async (opt) => {
     return
   }
 })
-
-// Handle extension icon click to open side panel
-chrome.action.onClicked.addListener(async (tab) => {
-  await chrome.sidePanel.open({ tabId: tab.id })
-})
+// activate side panel on action click
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error))
 
 self.onerror = function (message, source, lineno, colno, error) {
   console.info("Error: " + message)

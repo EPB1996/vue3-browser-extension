@@ -25,7 +25,8 @@ export default {
   manifest_version: 3,
   // key: '',
   action: {
-    default_popup: "src/ui/action-popup/index.html",
+    /*  default_popup: "src/ui/action-popup/index.html", */
+    default_title: "Click to open panel",
   },
   background: {
     service_worker: "src/background/index.ts",
