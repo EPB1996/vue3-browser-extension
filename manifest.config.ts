@@ -35,14 +35,14 @@ export default {
     {
       all_frames: false,
       js: [
-        "src/content-script/index.ts" /* , "src/selection-script/index.ts" */,
+        "src/content-script/default/index.ts" /* , "src/selection-script/index.ts" */,
       ],
-      matches: ["https://drive.google.com/*"],
+      matches: ["<all_urls>"],
       run_at: "document_end",
     },
     {
       all_frames: false,
-      js: ["src/test-script/index.ts"],
+      js: ["src/content-script/gmail/index.ts"],
       matches: ["https://mail.google.com/*"],
       run_at: "document_end",
     },

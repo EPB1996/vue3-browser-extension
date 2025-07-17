@@ -1,6 +1,6 @@
 import { MessageType } from "@/model/message"
 
-console.info("Test script loaded")
+console.info("Gmail script loaded")
 
 // Example of content script initiating communication
 window.addEventListener("load", async () => {

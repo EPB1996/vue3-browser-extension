@@ -40,10 +40,13 @@
       <!-- <pre>{{ thread.messages }}</pre> -->
       <div class="flex flex-col gap-2">
         <div
-          v-for="message in Array.from(thread.messages)"
+          v-for="message in Array.from(
+            thread.messages as Array<{ id: string; snippet: string }>,
+          )"
           :key="message.id"
           class="px-2 border rounded bg-gray-100 border-gray-300 shadow-sm"
           style="margin-left: 5px"
+          @click="() => fetchMessage(message.id)"
         >
           <p>
             {{
@@ -121,10 +124,37 @@ const fetchThread = async () => {
     if (!response.ok) {
       apiError.value = response.statusText
     }
-    console.info("Response:", response)
-    thread.value = await response.json()
+    const jsonResponse = await response.json()
+    console.log("Fetched Gmail thread:", jsonResponse)
+    thread.value = jsonResponse
   } catch (error) {
     console.error("Error fetching Gmail thread:", error)
+    apiError.value = error
+  }
+}
+
+const fetchMessage = async (messageId: string) => {
+  const accessToken = await identityService.getAccessToken()
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      },
+    )
+
+    if (!response.ok) {
+      apiError.value = response.statusText
+    }
+
+    const jsonResponse = await response.json()
+    console.info("Fetched message:", jsonResponse)
+  } catch (error) {
+    console.error("Error fetching Gmail message:", error)
     apiError.value = error
   }
 }
