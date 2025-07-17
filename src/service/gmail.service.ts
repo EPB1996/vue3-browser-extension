@@ -26,6 +26,26 @@ export interface GmailMessage {
   sizeEstimate: number
   raw?: string
 }
+export interface GmailDraft {
+  id: string
+  message: GmailMessage
+}
+
+export interface GmailDraftRequest {
+  message: {
+    raw?: string
+    payload?: {
+      headers: Array<{
+        name: string
+        value: string
+      }>
+      body?: {
+        data: string
+      }
+    }
+    threadId?: string
+  }
+}
 
 export interface GmailThread {
   id: string
@@ -76,11 +96,10 @@ export class GmailService {
   private httpService: HttpService
   private userId: string
 
-  constructor(accessToken: string, userId: string = "me") {
+  constructor(userId: string = "me") {
     this.httpService = new HttpService(
       "https://gmail.googleapis.com/gmail/v1",
       {
-        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
     )
@@ -165,78 +184,6 @@ export class GmailService {
     })
   }
 
-  // List labels
-  async listLabels(): Promise<HttpResponse<GmailListResponse<GmailLabel>>> {
-    return this.httpService.get(`/users/${this.userId}/labels`)
-  }
-
-  // Get label by ID
-  async getLabel(labelId: string): Promise<HttpResponse<GmailLabel>> {
-    return this.httpService.get(`/users/${this.userId}/labels/${labelId}`)
-  }
-
-  // Create label
-  async createLabel(
-    label: Partial<GmailLabel>,
-  ): Promise<HttpResponse<GmailLabel>> {
-    return this.httpService.post(`/users/${this.userId}/labels`, label)
-  }
-
-  // Update label
-  async updateLabel(
-    labelId: string,
-    label: Partial<GmailLabel>,
-  ): Promise<HttpResponse<GmailLabel>> {
-    return this.httpService.put(
-      `/users/${this.userId}/labels/${labelId}`,
-      label,
-    )
-  }
-
-  // Delete label
-  async deleteLabel(labelId: string): Promise<HttpResponse<void>> {
-    return this.httpService.delete(`/users/${this.userId}/labels/${labelId}`)
-  }
-
-  // Send message
-  async sendMessage(message: {
-    raw: string
-  }): Promise<HttpResponse<GmailMessage>> {
-    return this.httpService.post(`/users/${this.userId}/messages/send`, message)
-  }
-
-  // Modify message labels
-  async modifyMessage(
-    messageId: string,
-    modifications: { addLabelIds?: string[]; removeLabelIds?: string[] },
-  ): Promise<HttpResponse<GmailMessage>> {
-    return this.httpService.post(
-      `/users/${this.userId}/messages/${messageId}/modify`,
-      modifications,
-    )
-  }
-
-  // Trash message
-  async trashMessage(messageId: string): Promise<HttpResponse<GmailMessage>> {
-    return this.httpService.post(
-      `/users/${this.userId}/messages/${messageId}/trash`,
-    )
-  }
-
-  // Untrash message
-  async untrashMessage(messageId: string): Promise<HttpResponse<GmailMessage>> {
-    return this.httpService.post(
-      `/users/${this.userId}/messages/${messageId}/untrash`,
-    )
-  }
-
-  // Delete message
-  async deleteMessage(messageId: string): Promise<HttpResponse<void>> {
-    return this.httpService.delete(
-      `/users/${this.userId}/messages/${messageId}`,
-    )
-  }
-
   // Get message attachment
   async getAttachment(
     messageId: string,
@@ -247,33 +194,106 @@ export class GmailService {
     )
   }
 
-  // Watch for changes (push notifications)
-  async watch(request: {
-    labelIds?: string[]
-    labelFilterAction?: "include" | "exclude"
-    topicName: string
-  }): Promise<HttpResponse<{ historyId: string; expiration: string }>> {
-    return this.httpService.post(`/users/${this.userId}/watch`, request)
-  }
+  // Draft operations
 
-  // Stop watching
-  async stopWatching(): Promise<HttpResponse<void>> {
-    return this.httpService.post(`/users/${this.userId}/stop`)
-  }
+  // List drafts
+  async listDrafts(options: GmailListOptions = {}): Promise<
+    HttpResponse<
+      GmailListResponse<{
+        id: string
+        message: { id: string; threadId: string }
+      }>
+    >
+  > {
+    const params: Record<string, string> = {}
 
-  // Get history
-  async getHistory(
-    startHistoryId: string,
-    options: { labelId?: string; maxResults?: number; pageToken?: string } = {},
-  ): Promise<HttpResponse<any>> {
-    const params: Record<string, string> = {
-      startHistoryId,
-    }
-
-    if (options.labelId) params.labelId = options.labelId
+    if (options.includeSpamTrash) params.includeSpamTrash = "true"
     if (options.maxResults) params.maxResults = options.maxResults.toString()
     if (options.pageToken) params.pageToken = options.pageToken
+    if (options.q) params.q = options.q
 
-    return this.httpService.get(`/users/${this.userId}/history`, { params })
+    return this.httpService.get(`/users/${this.userId}/drafts`, { params })
+  }
+
+  // Get draft by ID
+  async getDraft(
+    draftId: string,
+    options: GmailMessageOptions = {},
+  ): Promise<HttpResponse<GmailDraft>> {
+    const params: Record<string, string> = {}
+
+    if (options.format) params.format = options.format
+    if (options.metadataHeaders)
+      params.metadataHeaders = options.metadataHeaders.join(",")
+
+    return this.httpService.get(`/users/${this.userId}/drafts/${draftId}`, {
+      params,
+    })
+  }
+
+  // Create draft
+  async createDraft(
+    draft: GmailDraftRequest,
+  ): Promise<HttpResponse<GmailDraft>> {
+    return this.httpService.post(`/users/${this.userId}/drafts`, draft)
+  }
+
+  // Helper method to create a draft from raw RFC 2822 email
+  async createDraftFromRaw(rawEmail: string): Promise<{
+    response: HttpResponse<GmailDraft>
+    urls: {
+      draftsList: string
+      messageUrl: string
+      composeUrl: string
+    }
+  }> {
+    // Encode raw email in base64url
+    const encodedRaw = btoa(rawEmail)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "")
+
+    const draftRequest: GmailDraftRequest = {
+      message: {
+        raw: encodedRaw,
+      },
+    }
+
+    const response = await this.createDraft(draftRequest)
+
+    const draftId = response.data.id
+    const messageId = response.data.message.id
+
+    const urls = this.generateDraftUrls(draftId, messageId)
+
+    return {
+      response,
+      urls,
+    }
+  }
+
+  // Helper method to generate Gmail URLs for drafts
+  generateDraftUrls(
+    draftId: string,
+    messageId?: string,
+  ): {
+    draftsList: string
+    messageUrl: string
+    composeUrl: string
+  } {
+    const baseUrl = "https://mail.google.com/mail/u/0"
+
+    return {
+      // Opens Gmail drafts list with the specific draft highlighted
+      draftsList: `${baseUrl}/#drafts/${draftId}`,
+
+      // Opens the draft using message ID (may open in drafts list)
+      messageUrl: messageId
+        ? `${baseUrl}/#drafts/${messageId}`
+        : `${baseUrl}/#drafts/${draftId}`,
+
+      // Attempt to open in compose mode (may not work consistently)
+      composeUrl: `${baseUrl}/#compose?d=${draftId}`,
+    }
   }
 }

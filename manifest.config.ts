@@ -58,6 +58,7 @@ export default {
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/gmail.addons.current.message.action",
       "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.compose",
     ],
   },
   devtools_page: "src/devtools/index.html",

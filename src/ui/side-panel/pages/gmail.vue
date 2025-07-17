@@ -33,37 +33,22 @@
       <UButton
         icon="ph:envelope-simple"
         variant="solid"
-        @click="getUnreadMessages(10)"
+        @click="fetchUnreadMessages(10)"
       >
         Fetch Unread Messages
       </UButton>
+      <UButton
+        icon="ph:envelope-simple"
+        variant="solid"
+        @click="createDraft()"
+      >
+        Create Draft
+      </UButton>
     </div>
 
-    <div v-if="thread">
-      <div class="py-2 flex flex-row justify-between items-center">
-        <div class="text-lg font-semibold mb-2">Thread ({{ threadId }})</div>
-        <div>{{ Array.from(thread.messages).length }}</div>
-      </div>
-      <!-- <pre>{{ thread.messages }}</pre> -->
-      <div class="flex flex-col gap-2">
-        <div
-          v-for="message in Array.from(
-            thread.messages as Array<{ id: string; snippet: string }>,
-          )"
-          :key="message.id"
-          class="px-2 border rounded bg-gray-100 border-gray-300 shadow-sm"
-          style="margin-left: 5px"
-          @click="() => fetchMessage(message.id)"
-        >
-          <p>
-            {{
-              message.snippet.length > 100
-                ? message.snippet.slice(0, 100) + "..."
-                : message.snippet
-            }}
-          </p>
-        </div>
-      </div>
+    <div v-if="gmailServiceResponse">
+      <h2 class="text-lg font-semibold mb-2">Gmail Service Response</h2>
+      <pre>{{ gmailServiceResponse }}</pre>
     </div>
 
     <div v-if="apiError">
@@ -75,6 +60,7 @@
 
 <script setup lang="ts">
 import { Message, MessageType } from "@/model/message"
+import { GmailService } from "@/service/gmail.service"
 
 import IdentityService from "@/service/identity.service"
 import MessageService from "@/service/message.service"
@@ -86,12 +72,14 @@ const { userEmail } = storeToRefs(userStore)
 const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
-/* console.info(await identityService.getAccessToken()) */
-
+const gmailService = new GmailService()
 const messageService = new MessageService()
 
+const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+const tabId = tab.id
+
 const apiError = ref<any>(null)
-const thread = ref<any>(null)
+const gmailServiceResponse = ref<any>(null)
 
 watch(threadId, async (newThreadId) => {
   if (newThreadId) {
@@ -100,9 +88,6 @@ watch(threadId, async (newThreadId) => {
 })
 
 const getThreadIdFromContentScript = async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  const tabId = tab.id
-
   const response = await messageService.sendMessageToContentScript(
     tabId as number,
     {
@@ -118,65 +103,131 @@ const getThreadIdFromContentScript = async () => {
 
   const threadId = response.threadId
 
-  try {
-    const accessToken = await identityService.getAccessToken()
+  fetchThread(threadId)
+}
 
-    const response = await fetch(
-      `https://www.googleapis.com/gmail/v1/users/me/threads/${threadId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      },
-    )
+const fetchThread = async (threadId: string) => {
+  gmailService.updateAccessToken(await identityService.getAccessToken())
 
-    if (!response.ok) {
-      apiError.value = response.statusText
-    }
-    const jsonResponse = await response.json()
-    console.log("Fetched Gmail thread:", jsonResponse)
-    thread.value = jsonResponse
-  } catch (error) {
-    console.error("Error fetching Gmail thread:", error)
-    apiError.value = error
-  }
+  gmailService
+    .getThread(threadId, {
+      format: "full",
+    })
+    .then((thread) => {
+      console.info("Fetched thread:", thread)
+      const decodedMessages = thread.data.messages.map((message) => {
+        const decodedParts = message.payload.parts?.map((part) => {
+          if (part.mimeType !== "text/plain") {
+            return
+          }
+          if (part.body.data) {
+            const decodedData = atob(
+              part.body.data.replace(/-/g, "+").replace(/_/g, "/"),
+            )
+            return decodedData
+              .replace(/Ã©/g, "é")
+              .replace(/Ã¨/g, "è")
+              .replace(/Ã´/g, "ô")
+              .replace(/Ãª/g, "ê")
+              .replace(/Ã§/g, "ç")
+              .replace(/Ã«/g, "ë")
+              .replace(/Ã¼/g, "ü")
+              .replace(/Ã /g, "à")
+              .replace(/Ã©/g, "é")
+              .replace(/Ã¯/g, "ï")
+              .replace(/Ã¤/g, "ä")
+              .replace(/Ã¶/g, "ö")
+              .replace(/Ã¹/g, "ù")
+              .replace(/Ã»/g, "û")
+              .replace(/Ã¡/g, "á")
+              .replace(/Ã³/g, "ó")
+              .replace(/Ã­/g, "í")
+              .replace(/Ã±/g, "ñ")
+              .replace(/Ãº/g, "ú")
+          }
+        })
+
+        return {
+          id: message.id,
+          snippet: message.snippet,
+          decodedParts,
+        }
+      })
+      gmailServiceResponse.value = decodedMessages
+    })
+    .catch((error) => {
+      console.error("Error fetching thread:", error)
+      apiError.value = error
+    })
 }
 
 const fetchMessage = async (messageId: string) => {
-  const accessToken = await identityService.getAccessToken()
+  gmailService.updateAccessToken(await identityService.getAccessToken())
 
-  try {
-    const response = await fetch(
-      `https://www.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      },
-    )
-
-    if (!response.ok) {
-      apiError.value = response.statusText
-    }
-
-    const jsonResponse = await response.json()
-    console.info("Fetched message:", jsonResponse)
-  } catch (error) {
-    console.error("Error fetching Gmail message:", error)
-    apiError.value = error
-  }
+  gmailService
+    .getMessage(messageId, {
+      format: "full",
+    })
+    .then((message) => {
+      console.info("Fetched message:", message)
+      gmailServiceResponse.value = message
+    })
+    .catch((error) => {
+      console.error("Error fetching message:", error)
+      apiError.value = error
+    })
 }
 
-const getUnreadMessages = async (maxResults: number = 10) => {
-  const gmailService = new GmailService(await identityService.getAccessToken())
-  const messages = await gmailService.listMessages({
-    q: "is:unread",
-    maxResults: maxResults,
-  })
+const fetchUnreadMessages = async (maxResults: number = 10) => {
+  gmailService.updateAccessToken(await identityService.getAccessToken())
+  gmailService
+    .listMessages({
+      q: "is:unread",
+      maxResults: maxResults,
+    })
+    .then((messages) => {
+      console.info("Fetched unread messages:", messages)
+      gmailServiceResponse.value = messages
+    })
+    .catch((error) => {
+      console.error("Error fetching unread messages:", error)
+      apiError.value = error
+    })
+}
 
-  console.info("Unread messages:", messages)
+const createDraft = async () => {
+  gmailService.updateAccessToken(await identityService.getAccessToken())
+
+  const rawEmail = `To: recipient@example.com
+          Subject: Test Subject
+          Content-Type: text/plain; charset=UTF-8
+
+          Hello, this is a test email body.`
+
+  gmailService
+    .createDraftFromRaw(rawEmail)
+    .then(async ({ response, urls }) => {
+      console.info("Draft created successfully:", response)
+      gmailServiceResponse.value = urls
+    })
+    .catch((error) => {
+      console.error("Error creating draft:", error)
+      apiError.value = error
+    })
+}
+
+const fetchDraft = async (draftId: string) => {
+  gmailService.updateAccessToken(await identityService.getAccessToken())
+  gmailService
+    .getDraft(draftId)
+    .then((draft) => {
+      console.info("Fetched draft:", draft)
+      gmailServiceResponse.value = draft
+    })
+    .catch((error) => {
+      console.error("Error fetching draft:", error)
+      apiError.value = error
+    })
 }
 </script>
 
