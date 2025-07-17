@@ -15,6 +15,7 @@ window.addEventListener("load", async () => {
 })
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.info("Received message in Gmail content script:", message)
   if (message.type === MessageType.CONTENT_SCRIPT_FUNCTION) {
     // Handle function calls from the background script
     const { functionName, args } = message.data

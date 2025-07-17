@@ -4,11 +4,6 @@ class SidePanelHandler {
   private sidePanelPort: chrome.runtime.Port | null = null
 
   constructor() {
-    // Handle extension icon click to open side panel
-    chrome.action.onClicked.addListener(async (tab) => {
-      await chrome.sidePanel.open({ tabId: tab.id })
-    })
-
     this.init()
   }
 
@@ -21,7 +16,6 @@ class SidePanelHandler {
 
         // Listen for messages from sidepanel
         port.onMessage.addListener((message) => {
-          console.info("Background received from sidepanel:", message)
           this.handleMessage(message)
         })
 
@@ -58,7 +52,7 @@ class SidePanelHandler {
       }
       case MessageType.RESPONSE: {
         // Handle response messages from sidepanel
-        console.info("Response from sidepanel:", message.data)
+        /* console.info("Response from sidepanel:", message.data) */
         break
       }
 

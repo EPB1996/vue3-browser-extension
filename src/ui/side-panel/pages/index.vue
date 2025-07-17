@@ -44,7 +44,6 @@
       v-if="loading"
       class="rounded-lg flex items-center gap-2"
     >
-      <Sparkles class="h-4 w-4 animate-spin" />
       <span class="font-bold">{{ labelRef }}</span>
     </div>
     <div v-if="response">

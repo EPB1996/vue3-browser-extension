@@ -63,7 +63,7 @@ import { Message, MessageType } from "@/model/message"
 import { GmailService } from "@/service/gmail.service"
 
 import IdentityService from "@/service/identity.service"
-import MessageService from "@/service/message.service"
+import ContentScriptCommunicationService from "@/service/communication/content-script.communication.service"
 
 const userStore = useUserStore()
 const sidePanelStore = useSidepanelStore()
@@ -73,22 +73,24 @@ const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
 const gmailService = new GmailService()
-const messageService = new MessageService()
-
-const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-const tabId = tab.id
+const contentCommunicationService =
+  ContentScriptCommunicationService.getInstance()
 
 const apiError = ref<any>(null)
 const gmailServiceResponse = ref<any>(null)
 
 watch(threadId, async (newThreadId) => {
+  console.info("Fetching thread ID from content script...")
   if (newThreadId) {
     await getThreadIdFromContentScript()
   }
 })
 
 const getThreadIdFromContentScript = async () => {
-  const response = await messageService.sendMessageToContentScript(
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  const tabId = tab.id
+  console.info("Fetching thread ID from content script...")
+  const response = await contentCommunicationService.sendToContentScript(
     tabId as number,
     {
       type: MessageType.CONTENT_SCRIPT_FUNCTION,
@@ -132,7 +134,7 @@ const fetchThread = async (threadId: string) => {
               .replace(/Ã§/g, "ç")
               .replace(/Ã«/g, "ë")
               .replace(/Ã¼/g, "ü")
-              .replace(/Ã /g, "à")
+              .replace(/Ã/g, "à")
               .replace(/Ã©/g, "é")
               .replace(/Ã¯/g, "ï")
               .replace(/Ã¤/g, "ä")
