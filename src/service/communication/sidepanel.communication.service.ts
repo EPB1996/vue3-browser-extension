@@ -1,7 +1,7 @@
 import { Message, MessageType } from "@/model/message"
 
-export class BackgroundCommunicationService {
-  private static instance: BackgroundCommunicationService
+export class SidepanelCommunicationService {
+  private static instance: SidepanelCommunicationService
   private backgroundPort: chrome.runtime.Port | null = null
   private messageHandlers: Map<
     MessageType,
@@ -10,12 +10,12 @@ export class BackgroundCommunicationService {
 
   private constructor() {}
 
-  public static getInstance(): BackgroundCommunicationService {
-    if (!BackgroundCommunicationService.instance) {
-      BackgroundCommunicationService.instance =
-        new BackgroundCommunicationService()
+  public static getInstance(): SidepanelCommunicationService {
+    if (!SidepanelCommunicationService.instance) {
+      SidepanelCommunicationService.instance =
+        new SidepanelCommunicationService()
     }
-    return BackgroundCommunicationService.instance
+    return SidepanelCommunicationService.instance
   }
 
   public initialize(portName: string): void {

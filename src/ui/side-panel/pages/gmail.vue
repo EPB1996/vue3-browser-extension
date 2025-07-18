@@ -64,7 +64,7 @@ import { GmailService } from "@/service/gmail.service"
 
 import IdentityService from "@/service/identity.service"
 import ContentScriptCommunicationService from "@/service/communication/content-script.communication.service"
-import { BackgroundCommunicationService } from "@/service/communication/background.communication.service"
+import { SidepanelCommunicationService } from "@/service/communication/sidepanel.communication.service"
 
 const userStore = useUserStore()
 const sidePanelStore = useSidepanelStore()
@@ -74,8 +74,8 @@ const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
 const gmailService = new GmailService()
-const backgroundCommunicationService =
-  BackgroundCommunicationService.getInstance()
+const sidepanelCommunicationService =
+  SidepanelCommunicationService.getInstance()
 const contentCommunicationService =
   ContentScriptCommunicationService.getInstance()
 
@@ -209,7 +209,7 @@ Content-Type: text/plain; charset=UTF-8
 
 Hello, this is a test email body.`
 
-  backgroundCommunicationService.sendToBackground({
+  sidepanelCommunicationService.sendToBackground({
     type: MessageType.BACKGROUND_FUNCTION,
     timestamp: Date.now(),
     data: {

@@ -1,5 +1,5 @@
 import { appRouter } from "src/utils/router"
-import { BackgroundCommunicationService } from "../background.communication.service"
+import { SidepanelCommunicationService } from "../sidepanel.communication.service"
 import {
   ErrorMessage,
   Message,
@@ -10,26 +10,27 @@ import {
 import ContentScriptCommunicationService from "../content-script.communication.service"
 
 export class MessageHandlers {
-  private backgroundService: BackgroundCommunicationService
+  private sidePanelCommunicationService: SidepanelCommunicationService
   private contentScriptService: ContentScriptCommunicationService
   private sidePanelStore: any // Replace with actual type
 
   constructor(sidePanelStore: any) {
-    this.backgroundService = BackgroundCommunicationService.getInstance()
+    this.sidePanelCommunicationService =
+      SidepanelCommunicationService.getInstance()
     this.contentScriptService = ContentScriptCommunicationService.getInstance()
     this.sidePanelStore = sidePanelStore
   }
 
   public registerAllHandlers(): void {
-    this.backgroundService.registerMessageHandler(
+    this.sidePanelCommunicationService.registerMessageHandler(
       MessageType.TAB_UPDATED,
       this.handleTabUpdated.bind(this),
     )
-    this.backgroundService.registerMessageHandler(
+    this.sidePanelCommunicationService.registerMessageHandler(
       MessageType.TAB_ACTIVATED,
       this.handleTabActivated.bind(this),
     )
-    this.backgroundService.registerMessageHandler(
+    this.sidePanelCommunicationService.registerMessageHandler(
       MessageType.ERROR,
       this.handleError.bind(this),
     )

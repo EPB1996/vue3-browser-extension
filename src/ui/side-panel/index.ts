@@ -6,7 +6,7 @@ import { createApp } from "vue"
 import App from "./app.vue"
 import ui from "@nuxt/ui/vue-plugin"
 import "./index.css"
-import { BackgroundCommunicationService } from "@/service/communication/background.communication.service"
+import { SidepanelCommunicationService } from "@/service/communication/sidepanel.communication.service"
 import { MessageHandlers } from "@/service/communication/handlers/sidepanel.handlers"
 
 appRouter.addRoute({
@@ -22,7 +22,8 @@ const selectionStore = useSelectionStore()
 const sidePanelStore = useSidepanelStore()
 
 // Initialize background communication service
-const backgroundService = BackgroundCommunicationService.getInstance()
+const sidepanelCommunicationService =
+  SidepanelCommunicationService.getInstance()
 
 // Initialize message handlers
 const sidePanelMessageHandlers = new MessageHandlers(sidePanelStore)
@@ -41,12 +42,12 @@ self.onerror = function (message, source, lineno, colno, error) {
 
 // Initialize when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  backgroundService.initialize("sidepanel")
+  sidepanelCommunicationService.initialize("sidepanel")
   console.info("Background communication service initialized")
-  backgroundService.sendInitialMessage()
+  sidepanelCommunicationService.sendInitialMessage()
 })
 
 // Handle page visibility changes
 document.addEventListener("visibilitychange", () => {
-  backgroundService.reconnectIfNeeded("sidepanel")
+  sidepanelCommunicationService.reconnectIfNeeded("sidepanel")
 })
