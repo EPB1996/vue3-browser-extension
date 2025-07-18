@@ -51,9 +51,18 @@
       <pre>{{ response }}</pre>
     </div>
   </div>
+
+  <UButton
+    variant="solid"
+    @click="() => createDocViaCloudFuntion()"
+  >
+    Create doc via cloud function
+  </UButton>
 </template>
 
 <script setup lang="ts">
+import IdentityService from "@/service/identity.service"
+
 const selectionStore = useSelectionStore()
 const { setSelection } = selectionStore
 const { selection, clickedElement } = storeToRefs(selectionStore)
@@ -99,4 +108,23 @@ watch(labelRef, async (newLabel) => {
     })
   }
 })
+
+const identityService = new IdentityService()
+
+const createDocViaCloudFuntion = async () => {
+  fetch("http://127.0.0.1:8080", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${await identityService.getAccessToken()}`,
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("Document created:", data)
+    })
+    .catch((error) => {
+      console.error("Error creating document:", error)
+    })
+}
 </script>
