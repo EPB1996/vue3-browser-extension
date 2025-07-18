@@ -73,4 +73,16 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   sidePanelHandler.postMessage(message)
 })
 
+chrome.contextMenus.create({
+  id: "notifyButton",
+  title: "Show Notification",
+  contexts: ["all"],
+})
+// Listen for context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "notifyButton") {
+    console.info("Context menu item clicked:", info)
+  }
+})
+
 export {}

@@ -72,6 +72,7 @@ export default {
     "sidePanel",
     "identity",
     "identity.email",
+    "contextMenus",
   ],
   web_accessible_resources: [
     {
