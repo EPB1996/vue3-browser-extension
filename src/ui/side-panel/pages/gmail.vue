@@ -59,25 +59,22 @@
 </template>
 
 <script setup lang="ts">
-import { Message, MessageType } from "@/model/message"
 import { GmailService } from "@/service/gmail.service"
 
 import IdentityService from "@/service/identity.service"
-import ContentScriptCommunicationService from "@/service/communication/content-script.communication.service"
-import { SidepanelCommunicationService } from "@/service/communication/sidepanel.communication.service"
+import { MESSAGE_TYPES } from "@/service/messaging/message.types"
+import { useMessageService } from "@/composables/useMessageService"
 
 const userStore = useUserStore()
 const sidePanelStore = useSidepanelStore()
+
+const { sidepanel } = useMessageService()
 
 const { userEmail } = storeToRefs(userStore)
 const { threadId } = storeToRefs(sidePanelStore)
 
 const identityService = new IdentityService()
 const gmailService = new GmailService()
-const sidepanelCommunicationService =
-  SidepanelCommunicationService.getInstance()
-const contentCommunicationService =
-  ContentScriptCommunicationService.getInstance()
 
 const apiError = ref<any>(null)
 const gmailServiceResponse = ref<any>(null)
@@ -89,26 +86,31 @@ watch(threadId, async (newThreadId) => {
   }
 })
 
+onMounted(async () => {
+  if (threadId.value) {
+    console.info("Fetching thread ID on first load...")
+    await getThreadIdFromContentScript()
+  }
+})
+
 const getThreadIdFromContentScript = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   const tabId = tab.id
   console.info("Fetching thread ID from content script...")
-  const response = await contentCommunicationService.sendToContentScript(
-    tabId as number,
+
+  sidepanel.sendMessageToTab(
+    tabId!,
+    MESSAGE_TYPES.CONTENT_SCRIPT_FUNCTION,
     {
-      type: MessageType.CONTENT_SCRIPT_FUNCTION,
-      timestamp: Date.now(),
-      data: {
-        tabId: tabId,
-        functionName: "getThreadId",
-        args: [],
-      },
-    } as Message,
+      targetTabId: tabId,
+      functionName: "getThreadId",
+      args: [],
+    },
+    {},
+    (response) => {
+      fetchThread(response.threadId)
+    },
   )
-
-  const threadId = response.threadId
-
-  fetchThread(threadId)
 }
 
 const fetchThread = async (threadId: string) => {
@@ -209,14 +211,14 @@ Content-Type: text/plain; charset=UTF-8
 
 Hello, this is a test email body.`
 
-  sidepanelCommunicationService.sendToBackground({
+  /* sidepanelCommunicationService.sendToBackground({
     type: MessageType.BACKGROUND_FUNCTION,
     timestamp: Date.now(),
     data: {
       functionName: "openUrl",
       args: ["https://mail.google.com/mail/u/0/#drafts/19818e6477e33fa6"],
     },
-  })
+  }) */
 
   // does not to be called for now
   /*  gmailService

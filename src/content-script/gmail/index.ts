@@ -1,33 +1,96 @@
 import { MessageType } from "@/model/message"
+import { MessageService } from "@/service/messaging/message.service"
+import { MESSAGE_TYPES, PORT_NAMES } from "@/service/messaging/message.types"
+import { send } from "vite"
+import { threadId } from "worker_threads"
 
 console.info("Gmail script loaded")
 
-// Example of content script initiating communication
+const gmailScriptMessageService = new MessageService(PORT_NAMES.GMAIL_SCRIPT)
+gmailScriptMessageService.listenForOneTimeMessages()
+
+let portName: string = PORT_NAMES.GMAIL_SCRIPT
+
+// GMAIL content script get tab id and create connection to background script
 window.addEventListener("load", async () => {
-  chrome.runtime.sendMessage({
-    type: "PAGE_LOADED",
-    data: {
-      url: window.location.href,
-      title: document.title,
-      loadTime: Date.now(),
+  console.info("Gmail content script loaded")
+  gmailScriptMessageService.sendOneTimeMessage(
+    MESSAGE_TYPES.PAGE_LOADED,
+    {},
+    PORT_NAMES.BACKGROUND,
+    {},
+    (response) => {
+      portName = `${PORT_NAMES.GMAIL_SCRIPT}-${response.tabId}`
+      gmailScriptMessageService.connectToBackground(portName)
     },
-  })
+  )
 })
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.info("Received message in Gmail content script:", message)
-  if (message.type === MessageType.CONTENT_SCRIPT_FUNCTION) {
-    // Handle function calls from the background script
-    const { functionName, args } = message.data
+// INIT_PORT from background script
+gmailScriptMessageService.onMessage(
+  MESSAGE_TYPES.INIT_PORT,
+  (payload, senderId, port) => {
+    console.info(`Gmail Script received INIT_PORT from ${senderId}.`)
+  },
+)
+
+// CONTENT_SCRIPT_FUNCTION Handler
+gmailScriptMessageService.onMessage(
+  MESSAGE_TYPES.CONTENT_SCRIPT_FUNCTION,
+  (payload: {
+    origin: string
+    targetTabId: string
+    functionName: string
+    args: []
+  }) => {
+    console.info(
+      `Gmail Script received CONTENT_SCRIPT_FUNCTION. Function: ${payload.functionName}`,
+    )
+    const { functionName, args } = payload
+    let response = {}
 
     if (functionName === "getThreadId") {
       // Example function to get Gmail thread ID
-      const threadId = document
-        .querySelector('[role="main"] [data-legacy-thread-id]')
-        ?.getAttribute("data-legacy-thread-id")
-
-      sendResponse({ threadId: threadId || null })
+      response = {
+        threadId:
+          document
+            .querySelector('[role="main"] [data-legacy-thread-id]')
+            ?.getAttribute("data-legacy-thread-id") || null,
+      }
     }
-  }
-  return true
-})
+
+    gmailScriptMessageService.sendMessage(
+      portName,
+      MESSAGE_TYPES.CONTENT_SCRIPT_FUNCTION_RESPONSE,
+      {
+        origin: payload.origin,
+        targetTabId: payload.targetTabId,
+        functionName: functionName,
+        args: args,
+        response: response,
+      },
+    )
+  },
+)
+
+// Listen on one-time messages
+gmailScriptMessageService.onOneTimeMessage(
+  MessageType.CONTENT_SCRIPT_FUNCTION,
+  (payload, sender, sendResponse) => {
+    console.info(
+      `Gmail Script received one-time CONTENT_SCRIPT_FUNCTION. Function: ${payload.functionName}`,
+    )
+    const { functionName, args } = payload
+    let response = {}
+    if (functionName === "getThreadId") {
+      // Example function to get Gmail thread ID
+      response = {
+        threadId:
+          document
+            .querySelector('[role="main"] [data-legacy-thread-id]')
+            ?.getAttribute("data-legacy-thread-id") || null,
+      }
+    }
+    if (sendResponse) sendResponse(response)
+  },
+)
