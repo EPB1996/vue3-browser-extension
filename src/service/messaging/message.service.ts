@@ -198,6 +198,7 @@ class MessageService {
     chrome.runtime.onMessage.addListener(
       (message: Message, sender, sendResponse) => {
         this._handleOneTimeMessage(message, sender, sendResponse)
+        return true
       },
     )
   }
@@ -209,7 +210,7 @@ class MessageService {
       )
       return
     }
-    const port = chrome.runtime.connect({ name: portName })
+    const port = chrome.runtime.connect(undefined, { name: portName })
     this._setupPort(port)
     this.sendMessage(port.name, MESSAGE_TYPES.INIT_PORT, {
       sourceId: this.sourceId,

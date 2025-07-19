@@ -34,45 +34,6 @@ gmailScriptMessageService.onMessage(
   },
 )
 
-// CONTENT_SCRIPT_FUNCTION Handler
-gmailScriptMessageService.onMessage(
-  MESSAGE_TYPES.CONTENT_SCRIPT_FUNCTION,
-  (payload: {
-    origin: string
-    targetTabId: string
-    functionName: string
-    args: []
-  }) => {
-    console.info(
-      `Gmail Script received CONTENT_SCRIPT_FUNCTION. Function: ${payload.functionName}`,
-    )
-    const { functionName, args } = payload
-    let response = {}
-
-    if (functionName === "getThreadId") {
-      // Example function to get Gmail thread ID
-      response = {
-        threadId:
-          document
-            .querySelector('[role="main"] [data-legacy-thread-id]')
-            ?.getAttribute("data-legacy-thread-id") || null,
-      }
-    }
-
-    gmailScriptMessageService.sendMessage(
-      portName,
-      MESSAGE_TYPES.CONTENT_SCRIPT_FUNCTION_RESPONSE,
-      {
-        origin: payload.origin,
-        targetTabId: payload.targetTabId,
-        functionName: functionName,
-        args: args,
-        response: response,
-      },
-    )
-  },
-)
-
 // Listen on one-time messages
 gmailScriptMessageService.onOneTimeMessage(
   MessageType.CONTENT_SCRIPT_FUNCTION,
