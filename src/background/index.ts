@@ -79,6 +79,46 @@ backgroundMessageService.onOneTimeMessage(
   },
 )
 
+// Listen for background function calls
+backgroundMessageService.onMessage(
+  MESSAGE_TYPES.BACKGROUND_FUNCTION,
+  (payload, senderId, port) => {
+    console.info(
+      `Background received BACKGROUND_FUNCTION from ${senderId}. Function: ${payload.functionName}`,
+    )
+    const { functionName, args } = payload
+    let response = {}
+    if (functionName === "createContextMenu") {
+      // Example function to create context menu items
+      args.forEach((item: any) => {
+        chrome.contextMenus.create({
+          id: item.id,
+          title: item.title,
+          contexts: item.contexts || ["all"],
+          visible: true,
+          // Add more properties as needed
+        })
+      })
+      response = {
+        status: "success",
+        message: "Context menu items created successfully",
+      }
+    } else {
+      response = {
+        status: "error", // Handle unknown function calls
+        message: `Unknown function: ${functionName}`,
+      }
+    }
+    if (port) {
+      backgroundMessageService.sendMessage(
+        port.name,
+        MESSAGE_TYPES.BACKGROUND_FUNCTION_RESPONSE,
+        response,
+      )
+    }
+  },
+)
+
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   const payload = {
@@ -107,7 +147,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   )
 })
 
-/* chrome.contextMenus.create({
+chrome.contextMenus.create({
   id: "notifyButton",
   title: "Show Notification",
   contexts: ["all"],
@@ -117,6 +157,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "notifyButton") {
     console.info("Context menu item clicked:", info)
   }
-}) */
+})
 
 export {}

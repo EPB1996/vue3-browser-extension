@@ -89,7 +89,7 @@ watch(labelRef, async (newLabel) => {
           <DropdownMenuGroup>
             <DropdownMenuItem
               @select="
-                (ev) => {
+                () => {
                   labelRef = 'Translation'
                   open = false
                   loading = true

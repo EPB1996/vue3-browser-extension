@@ -41,10 +41,16 @@ export default {
       matches: ["<all_urls>"],
       run_at: "document_end",
     }, */
-    {
+    /*  {
       all_frames: false,
       js: ["src/content-script/gmail/index.ts"],
       matches: ["https://mail.google.com/*"],
+      run_at: "document_end",
+    }, */
+    {
+      all_frames: false,
+      js: ["src/content-script/drive/index.ts"],
+      matches: ["https://drive.google.com/*"],
       run_at: "document_end",
     },
   ],
