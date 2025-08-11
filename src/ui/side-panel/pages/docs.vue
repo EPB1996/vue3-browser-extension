@@ -1,12 +1,21 @@
 <template>
   <div>
     <h1>Docs Page</h1>
-    <UButton
-      variant="solid"
-      @click="() => createDocViaCloudFuntion()"
-    >
-      Create doc via cloud function
-    </UButton>
+    <div class="flex flex-col gap-2">
+      <UButton
+        variant="solid"
+        @click="() => createDocViaCloudFuntion()"
+      >
+        Create doc via cloud function
+      </UButton>
+      <UButton
+        to="/side-panel/translation"
+        icon="ph:translate"
+        variant="ghost"
+      >
+        Translate
+      </UButton>
+    </div>
   </div>
 </template>
 
