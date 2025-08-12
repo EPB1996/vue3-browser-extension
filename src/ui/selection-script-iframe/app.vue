@@ -23,15 +23,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { TranslationService } from "@/service/genAi/translation.service"
 
-const labels = [
-  "Summary",
-  "Text generation",
-  "Image generation",
-  "Sentiment analysis",
-  "Data extraction",
-  "Translation",
-]
+const translationService = new TranslationService()
+const selectionStore = useSelectionStore()
+const { selection } = storeToRefs(selectionStore)
+
+const labels = ["Translation"]
 
 const labelRef = ref("")
 const open = ref(false)
@@ -40,25 +38,18 @@ const response = ref("")
 
 watch(labelRef, async (newLabel) => {
   if (newLabel && loading.value) {
-    const responses = [
-      `AI response part 1 for "${newLabel}"`,
-      `AI response part 2 for "${newLabel}"`,
-      `AI response part 3 for "${newLabel}"`,
-    ]
     response.value = ""
     loading.value = true
 
-    responses.forEach((res, index) => {
-      setTimeout(
-        () => {
-          response.value += `${res}\n`
-          if (index === responses.length - 1) {
-            loading.value = false
-          }
-        },
-        1000 * (index + 1),
-      ) // Simulate a delay for each response part
-    })
+    try {
+      const res = await translationService.translate(selection.value)
+      response.value = res
+    } catch (error) {
+      console.error("Error during translation:", error)
+      response.value = "Error occurred during translation."
+    } finally {
+      loading.value = false
+    }
   }
 })
 </script>

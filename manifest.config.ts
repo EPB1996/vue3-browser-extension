@@ -49,8 +49,8 @@ export default {
     }, */
     {
       all_frames: false,
-      js: ["src/content-script/drive/index.ts"],
-      matches: ["https://drive.google.com/*"],
+      js: ["src/content-script/selection/index.ts"],
+      matches: ["<all_urls>"],
       run_at: "document_end",
     },
   ],

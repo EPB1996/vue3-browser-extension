@@ -7,8 +7,6 @@ import "./index.css"
 
 const app = createApp(App).use(i18n).use(ui).use(pinia)
 
-//app.mount("#app")
-
 export default app
 
 self.onerror = function (message, source, lineno, colno, error) {

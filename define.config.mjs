@@ -1,4 +1,5 @@
 import fs from "node:fs"
+import { env } from "node:process"
 import { spawnSync } from "node:child_process"
 import packageJson from "./package.json" with { type: "json" }
 
@@ -24,10 +25,11 @@ const raw = {
   GITHUB_URL: packageJson.repository.url,
   // Set the HTML title for all pages from package.json so you can use %HTMLTITLE% in your HTML files.
   HTML_TITLE: packageJson.displayName,
+  GENAI_API_KEY: env.VITE_GENAI_API_KEY || "",
 }
 
 const define = Object.fromEntries(
-  Object.entries(raw).map(([k, v]) => [`__${ k }__`, JSON.stringify(v)])
+  Object.entries(raw).map(([k, v]) => [`__${k}__`, JSON.stringify(v)]),
 )
 
 export { raw, define }

@@ -76,6 +76,7 @@
   "type": "module",
   "version": "0.0.1",
   "dependencies": {
+    "@google/genai": "^1.13.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "googleapis": "^150.0.1",
